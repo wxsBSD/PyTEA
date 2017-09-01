@@ -19,6 +19,7 @@ Key size: 128bits
 
 import struct
 import logging
+import binascii
 
 from hashlib import sha256
 from argparse import ArgumentParser
@@ -212,14 +213,17 @@ class TinyEncryptionAlgorithm(object):
             block = self.decrypt_block(block, key)
             plaintext += struct.pack("I", block[0])
             plaintext += struct.pack("I", block[1])
-        return self.remove_padding(plaintext)
+        try:
+            return self.remove_padding(plaintext)
+        except (ValueError, AssertionError):
+            return plaintext
 
 
 def _main(args):
     """ Encrypt/Decrypt a file """
     args = parser.parse_args()
     tea = TinyEncryptionAlgorithm()
-    key = sha256(args.password).digest()[:16]
+    key = binascii.unhexlify(args.password)
     print '[*] Key = %s' % key.encode('hex')
     if args.encrypt_file:
         print '[*] Encrypt %s -> %s ...' % (args.encrypt_file, args.output_file),
